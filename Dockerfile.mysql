@@ -1,11 +1,19 @@
-FROM mysql:8.0
+FROM mysql:8.0.33-debian
 
-# Set environment variables
-ENV MYSQL_ROOT_PASSWORD=Root@123
-ENV MYSQL_DATABASE=form_app
 
-# Copy initialization script
+# Use the default mysql user
+USER mysql
+
+# Copy the initialization script to the entrypoint directory
 COPY init.sql /docker-entrypoint-initdb.d/
 
 # Expose MySQL port
-EXPOSE 3306 
+EXPOSE 3306
+
+
+
+
+#custom-mysql   latest    e6e011999c29   About an hour ago   772MB
+
+#custom-mysql   v1        2cc0c9b7af1d   About an hour ago   610MB
+#Reduced by 160mb - used dedian

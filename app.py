@@ -16,9 +16,9 @@ def form():
         redis_service.save_user(name)
 
         # Save to MySQL
-        name_redis = mysql_service.save_user(name)
+        mysql_service.save_user(name)
 
-        message = f"Hello, {name_redis}! Welcome to the page."
+        message = f"Hello, {name}! Welcome to the page."
     return render_template("form.html", message=message)
 
 if __name__ == "__main__":

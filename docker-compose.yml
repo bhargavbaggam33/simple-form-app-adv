@@ -1,16 +1,19 @@
-version: '3'
+version: '3.8'
 
 services:
   flask-app:
-    image: bhargavbaggam01/simple-form-app:latest
+    build: .
+    image: simple-form-app_flask-app:latest
     ports:
       - "5000:5000"
+    read_only: true
+    secrets:
+      - mysql_database
+      - mysql_user
+      - mysql_password
     environment:
-      - MYSQL_HOST=mysql
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=Root@123
-      - MYSQL_DATABASE=form_app
-      - REDIS_HOST=redis
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
     depends_on:
       mysql:
         condition: service_healthy
@@ -18,30 +21,67 @@ services:
         condition: service_started
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'  # Limit to 50% of one CPU core
+          memory: 512M  # Limit to 512MB of RAM
+        reservations:
+          cpus: '0.25'  # Guarantee 25% of one CPU core
+          memory: 256M  # Guarantee 256MB of RAM
 
   mysql:
-    image: bhargavbaggam01/simple-form-app:latest-sql
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    image: simple-form-app-mysql:latest
     ports:
       - "3307:3306"
+    secrets:
+      - mysql_root_password
+      - mysql_database
+      - mysql_user
+      - mysql_password
     environment:
-          MYSQL_ROOT_PASSWORD: Root@123
-          MYSQL_DATABASE: form_app
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE_FILE: /run/secrets/mysql_database
+      MYSQL_USER_FILE: /run/secrets/mysql_user
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRoot@123"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'   # Limit to one CPU core
+          memory: 1G    # Limit to 1GB of RAM
+        reservations:
+          cpus: '0.5'   # Guarantee 50% of one CPU core
+          memory: 512M  # Guarantee 512MB of RAM
 
   redis:
     image: redis:alpine
     ports:
       - "6380:6379"
+    read_only: true
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'  # Limit to 30% of one CPU core
+          memory: 256M  # Limit to 256MB of RAM
+        reservations:
+          cpus: '0.10'  # Guarantee 10% of one CPU core
+          memory: 128M  # Guarantee 128MB of RAM
 
 networks:
   app-network:
@@ -49,3 +89,13 @@ networks:
 
 volumes:
   mysql_data:
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  mysql_database:
+    file: ./secrets/mysql_database.txt
+  mysql_user:
+    file: ./secrets/mysql_user.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt

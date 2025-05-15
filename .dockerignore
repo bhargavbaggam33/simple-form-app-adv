@@ -1,0 +1,11 @@
+# Python virtual environment
+venv/
+.env
+
+
+*.py[cod]
+__pycache__/
+
+# Git repository metadata
+.git/
+secrets/
